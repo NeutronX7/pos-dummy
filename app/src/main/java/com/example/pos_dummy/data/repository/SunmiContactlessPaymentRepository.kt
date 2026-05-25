@@ -12,7 +12,6 @@ import com.example.pos_dummy.domain.model.ContactlessPaymentResult
 import com.example.pos_dummy.domain.model.ContactlessPaymentStage
 import com.example.pos_dummy.domain.repository.ContactlessDiagnosticsRepository
 import com.example.pos_dummy.domain.repository.ContactlessPaymentRepository
-import com.sunmi.api.utils.ByteUtil
 import com.sunmi.pay.hardware.aidl.AidlConstants
 import com.sunmi.pay.hardware.aidlv2.readcard.CheckCardCallbackV2
 import sunmi.paylib.SunmiPayKernel
@@ -31,7 +30,7 @@ class SunmiContactlessPaymentRepository(
 
     private val connectCallback = object : SunmiPayKernel.ConnectCallback {
         override fun onConnectPaySDK() {
-            isConnected = trueww
+            isConnected = true
             listener?.onEvent(
                 ContactlessPaymentResult(
                     stage = ContactlessPaymentStage.READY,
@@ -55,17 +54,6 @@ class SunmiContactlessPaymentRepository(
     }
 
     private val checkCardCallback = object : CheckCardCallbackV2.Stub() {
-
-        private fun checkCardEnc() {
-            try {
-                val TDK_INDEX: Int = 19
-                val tdk: ByteArray? = ByteUtil.hexString2Bytes("F2914D44BC2AF05533DD20C9A0B5B861")
-                val tdkcv: ByteArray? = ByteUtil.hexString2Bytes("36821ADF5EB5513F")
-
-            } catch (e: Exception) {
-
-            }
-        }
 
         override fun findMagCard(info: Bundle?) = Unit
 
