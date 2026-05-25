@@ -16,7 +16,6 @@ import com.sunmi.pay.hardware.aidl.AidlConstants
 import com.sunmi.pay.hardware.aidlv2.readcard.CheckCardCallbackV2
 import sunmi.paylib.SunmiPayKernel
 
-
 class SunmiContactlessPaymentRepository(
     context: Context,
     private val diagnosticsRepository: ContactlessDiagnosticsRepository,
@@ -24,7 +23,6 @@ class SunmiContactlessPaymentRepository(
     private val appContext = context.applicationContext
     private val kernel = SunmiPayKernel.getInstance()
     private var listener: ContactlessPaymentListener? =  null
-
     private var pendingRequest: ContactlessPaymentRequest? = null
     private var isConnected = false
 

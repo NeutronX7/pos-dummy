@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.example.pos_dummy.presentation.screen.SunmiDummyScreen
+import com.example.pos_dummy.presentation.screen.HomeScreen
 import com.example.pos_dummy.ui.theme.PosdummyTheme
 
 class MainActivity : ComponentActivity() {
@@ -13,7 +13,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             PosdummyTheme {
-                SunmiDummyScreen()
+                HomeScreen()
             }
         }
     }

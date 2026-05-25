@@ -4,7 +4,7 @@ import com.example.pos_dummy.domain.model.ContactlessUiState
 import com.example.pos_dummy.domain.model.ContactlessPaymentUiState
 import com.example.pos_dummy.domain.model.PrinterInfo
 
-data class SunmiDummyUiState(
+data class HomeUiState(
     val printerInfo: PrinterInfo,
     val lastMessage: String = "Waiting to initialize Sunmi dummy flow.",
     val printedReceipt: String = "",

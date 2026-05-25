@@ -19,12 +19,10 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -37,18 +35,18 @@ import com.example.pos_dummy.data.repository.AndroidContactlessDiagnosticsReposi
 import com.example.pos_dummy.data.repository.SunmiContactlessPaymentRepository
 import com.example.pos_dummy.domain.model.ContactlessPaymentStage
 import com.example.pos_dummy.domain.model.ContactlessProbeStage
-import com.example.pos_dummy.presentation.viewmodel.SunmiDummyViewModel
+import com.example.pos_dummy.presentation.viewmodel.HomeViewModel
 import com.example.pos_dummy.ui.theme.PosdummyTheme
 
 @Composable
-fun SunmiDummyScreen(
+fun HomeScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val viewModel = remember {
         val diagnosticsRepository = AndroidContactlessDiagnosticsRepository(context)
-        SunmiDummyViewModel(
+        HomeViewModel(
             contactlessDiagnosticsRepository = diagnosticsRepository,
             contactlessPaymentRepository = SunmiContactlessPaymentRepository(
                 context = context,
@@ -312,8 +310,8 @@ private fun boolLabel(value: Boolean): String {
 
 @Preview(showBackground = true)
 @Composable
-private fun SunmiDummyScreenPreview() {
+private fun HomeScreenPreview() {
     PosdummyTheme {
-        SunmiDummyScreen()
+        HomeScreen()
     }
 }

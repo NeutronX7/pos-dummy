@@ -19,7 +19,7 @@ import com.example.pos_dummy.domain.usecase.contactless.GetContactlessPaymentAva
 import com.example.pos_dummy.domain.usecase.contactless.StartContactlessProbeUseCase
 import com.example.pos_dummy.domain.usecase.contactless.StartContactlessPaymentUseCase
 
-class SunmiDummyViewModel(
+class HomeViewModel(
     private val printerRepository: PosPrinterRepository = FakeSunmiPrinterRepository(),
     private val contactlessDiagnosticsRepository: ContactlessDiagnosticsRepository,
     private val contactlessPaymentRepository: ContactlessPaymentRepository,
@@ -43,14 +43,14 @@ class SunmiDummyViewModel(
     }
 
     var uiState by mutableStateOf(
-        SunmiDummyUiState(
+        HomeUiState(
             printerInfo = printerRepository.getPrinterInfo(),
             contactlessUiState = clearContactlessStateUseCase(
-                SunmiDummyUiState(printerInfo = printerRepository.getPrinterInfo()).contactlessUiState.copy(
+                HomeUiState(printerInfo = printerRepository.getPrinterInfo()).contactlessUiState.copy(
                     capabilities = getContactlessCapabilitiesUseCase()
                 )
             ),
-            paymentUiState = SunmiDummyUiState(
+            paymentUiState = HomeUiState(
                 printerInfo = printerRepository.getPrinterInfo()
             ).paymentUiState.copy(
                 availability = getContactlessPaymentAvailabilityUseCase()
@@ -143,7 +143,7 @@ class SunmiDummyViewModel(
         contactlessPaymentRepository.dispose()
     }
 
-    private fun SunmiDummyUiState.refreshPrinterInfo(): SunmiDummyUiState {
+    private fun HomeUiState.refreshPrinterInfo(): HomeUiState {
         return copy(printerInfo = printerRepository.getPrinterInfo())
     }
 
