@@ -1,7 +1,7 @@
 package com.example.sunmi.domain.repository
 
 import com.example.sunmi.domain.model.ContactlessPaymentAvailability
-import com.example.sunmi.domain.model.ContactlessPaymentListener
+import com.example.sunmi.domain.listener.ContactlessPaymentListener
 import com.example.sunmi.domain.model.ContactlessPaymentRequest
 import com.example.sunmi.domain.model.ContactlessPaymentResult
 

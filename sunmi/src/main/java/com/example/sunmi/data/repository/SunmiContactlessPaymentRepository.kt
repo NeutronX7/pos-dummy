@@ -10,7 +10,7 @@ import com.example.sunmi.data.source.SunmiPaymentSdkListener
 import com.example.sunmi.data.source.SunmiPaymentServiceAvailabilityDataSource
 import com.example.sunmi.data.source.ContactlessCardDetails
 import com.example.sunmi.domain.model.ContactlessPaymentAvailability
-import com.example.sunmi.domain.model.ContactlessPaymentListener
+import com.example.sunmi.domain.listener.ContactlessPaymentListener
 import com.example.sunmi.domain.model.ContactlessPaymentRequest
 import com.example.sunmi.domain.model.ContactlessPaymentResult
 import com.example.sunmi.domain.model.ContactlessPaymentStage

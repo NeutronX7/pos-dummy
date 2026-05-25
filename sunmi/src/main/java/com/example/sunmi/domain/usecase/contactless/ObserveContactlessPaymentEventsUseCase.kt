@@ -1,6 +1,6 @@
 package com.example.sunmi.domain.usecase.contactless
 
-import com.example.sunmi.domain.model.ContactlessPaymentListener
+import com.example.sunmi.domain.listener.ContactlessPaymentListener
 import com.example.sunmi.domain.repository.ContactlessPaymentRepository
 
 class ObserveContactlessPaymentEventsUseCase(

@@ -3,7 +3,7 @@ package com.example.pos_dummy.presentation.viewmodel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.example.sunmi.domain.model.ContactlessPaymentListener
+import com.example.sunmi.domain.listener.ContactlessPaymentListener
 import com.example.sunmi.domain.model.ContactlessPaymentResult
 import com.example.sunmi.domain.model.ContactlessPaymentStage
 import com.example.sunmi.domain.model.ContactlessPaymentUiState
