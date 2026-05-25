@@ -31,11 +31,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.example.sunmi.data.repository.AndroidContactlessDiagnosticsRepository
-import com.example.sunmi.data.repository.SunmiContactlessPaymentRepository
 import com.example.sunmi.domain.model.ContactlessPaymentStage
 import com.example.sunmi.domain.model.ContactlessProbeStage
-import com.example.pos_dummy.presentation.viewmodel.HomeViewModel
+import com.example.pos_dummy.presentation.viewmodel.HomeViewModelFactory
 import com.example.pos_dummy.ui.theme.PosdummyTheme
 
 @Composable
@@ -44,16 +42,7 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val viewModel = remember {
-        val diagnosticsRepository = AndroidContactlessDiagnosticsRepository(context)
-        HomeViewModel(
-            contactlessDiagnosticsRepository = diagnosticsRepository,
-            contactlessPaymentRepository = SunmiContactlessPaymentRepository(
-                context = context,
-                diagnosticsRepository = diagnosticsRepository
-            )
-        )
-    }
+    val viewModel = remember { HomeViewModelFactory.create(context) }
     val uiState = viewModel.uiState
 
     DisposableEffect(lifecycleOwner, viewModel) {

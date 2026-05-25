@@ -1,11 +1,14 @@
 package com.example.sunmi.data.repository
 
 import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Bundle
-import android.os.RemoteException
 import com.example.sunmi.data.model.SunmiServiceConfig
+import com.example.sunmi.data.source.AndroidSunmiPaymentServiceAvailabilityDataSource
+import com.example.sunmi.data.source.PaymentSdkOperationResult
+import com.example.sunmi.data.source.SunmiPayKernelDataSource
+import com.example.sunmi.data.source.SunmiPaymentSdkDataSource
+import com.example.sunmi.data.source.SunmiPaymentSdkListener
+import com.example.sunmi.data.source.SunmiPaymentServiceAvailabilityDataSource
+import com.example.sunmi.data.source.ContactlessCardDetails
 import com.example.sunmi.domain.model.ContactlessPaymentAvailability
 import com.example.sunmi.domain.model.ContactlessPaymentListener
 import com.example.sunmi.domain.model.ContactlessPaymentRequest
@@ -13,39 +16,35 @@ import com.example.sunmi.domain.model.ContactlessPaymentResult
 import com.example.sunmi.domain.model.ContactlessPaymentStage
 import com.example.sunmi.domain.repository.ContactlessDiagnosticsRepository
 import com.example.sunmi.domain.repository.ContactlessPaymentRepository
-import com.sunmi.pay.hardware.aidl.AidlConstants
-import com.sunmi.pay.hardware.aidlv2.readcard.CheckCardCallbackV2
-import sunmi.paylib.SunmiPayKernel
 
-class SunmiContactlessPaymentRepository(
-    context: Context,
+class SunmiContactlessPaymentRepository internal constructor(
     private val diagnosticsRepository: ContactlessDiagnosticsRepository,
+    private val paymentServiceAvailabilityDataSource: SunmiPaymentServiceAvailabilityDataSource,
+    private val paymentSdkDataSource: SunmiPaymentSdkDataSource,
 ) : ContactlessPaymentRepository {
+    constructor(
+        context: Context,
+        diagnosticsRepository: ContactlessDiagnosticsRepository,
+    ) : this(
+        diagnosticsRepository = diagnosticsRepository,
+        paymentServiceAvailabilityDataSource = AndroidSunmiPaymentServiceAvailabilityDataSource(context),
+        paymentSdkDataSource = SunmiPayKernelDataSource(context),
+    )
+
     private companion object {
         private const val checkCardTimeoutSeconds = 60
     }
 
-    private val appContext = context.applicationContext
-    private val kernel = SunmiPayKernel.getInstance()
     private var listener: ContactlessPaymentListener? = null
     private var pendingRequest: ContactlessPaymentRequest? = null
-    private var isConnected = false
 
-    private val connectCallback = object : SunmiPayKernel.ConnectCallback {
-        override fun onConnectPaySDK() {
-            isConnected = true
-            listener?.onEvent(
-                ContactlessPaymentResult(
-                    stage = ContactlessPaymentStage.READY,
-                    title = "SUNMI payment SDK connected",
-                    message = "Pay service connected. Starting contactless card detection."
-                )
-            )
+    private val sdkListener = object : SunmiPaymentSdkListener {
+        override fun onSdkConnected() {
+            listener?.onEvent(readyResult())
             beginCheckCard()
         }
 
-        override fun onDisconnectPaySDK() {
-            isConnected = false
+        override fun onSdkDisconnected() {
             listener?.onEvent(
                 ContactlessPaymentResult(
                     stage = ContactlessPaymentStage.ERROR,
@@ -54,45 +53,19 @@ class SunmiContactlessPaymentRepository(
                 )
             )
         }
-    }
 
-    private val checkCardCallback = object : CheckCardCallbackV2.Stub() {
-
-        override fun findMagCard(info: Bundle?) = Unit
-
-        override fun findICCard(atr: String?) = Unit
-
-        override fun findRFCard(uuid: String?) {
-            notifyDetected(uuid.orEmpty(), null, null, null, null)
+        override fun onCardDetected(cardDetails: ContactlessCardDetails) {
+            notifyDetected(cardDetails)
         }
 
-        override fun onError(code: Int, message: String?) {
+        override fun onError(code: Int?, message: String?) {
             notifyError(code, message)
-        }
-
-        override fun findICCardEx(info: Bundle?) = Unit
-
-        override fun findRFCardEx(info: Bundle?) {
-            notifyDetected(
-                uuid = info?.getString("uuid").orEmpty(),
-                ats = info?.getString("ats"),
-                cardType = info?.getInt("cardType"),
-                cardCategory = info?.getInt("cardCategory"),
-                pan = info?.getString("pan")
-            )
-        }
-
-        override fun onErrorEx(info: Bundle?) {
-            notifyError(
-                code = info?.getInt("code") ?: Int.MIN_VALUE,
-                message = info?.getString("message")
-            )
         }
     }
 
     override fun getAvailability(): ContactlessPaymentAvailability {
         val capabilities = diagnosticsRepository.getCapabilities()
-        val serviceInstalled = isPayServiceInstalled()
+        val serviceInstalled = paymentServiceAvailabilityDataSource.isInstalled()
         val hardwareReady = serviceInstalled || (capabilities.hasNfcFeature && capabilities.isNfcEnabled)
         val status = when {
             serviceInstalled -> "SUNMI payment service is available. You can start a contactless test through the vendor SDK even if Android does not expose generic NFC."
@@ -125,15 +98,11 @@ class SunmiContactlessPaymentRepository(
             )
         }
 
-        return if (kernel.mReadCardOptV2 != null && isConnected) {
+        return if (paymentSdkDataSource.isConnected()) {
             beginCheckCard()
-            ContactlessPaymentResult(
-                stage = ContactlessPaymentStage.WAITING_FOR_CARD,
-                title = "Waiting for card",
-                message = waitingMessage(request)
-            )
+            waitingForCardResult(request)
         } else {
-            val bindStarted = kernel.initPaySDK(appContext, connectCallback)
+            val bindStarted = paymentSdkDataSource.connect(sdkListener)
             if (bindStarted) {
                 ContactlessPaymentResult(
                     stage = ContactlessPaymentStage.INITIALIZING,
@@ -151,95 +120,88 @@ class SunmiContactlessPaymentRepository(
     }
 
     override fun cancelPayment(): ContactlessPaymentResult {
-        return try {
-            kernel.mReadCardOptV2?.cancelCheckCard()
-            ContactlessPaymentResult(
+        return when (val result = paymentSdkDataSource.cancelCardCheck()) {
+            PaymentSdkOperationResult.Success -> ContactlessPaymentResult(
                 stage = ContactlessPaymentStage.CANCELED,
                 title = "Payment canceled",
                 message = "The SUNMI contactless check-card session was canceled."
             )
-        } catch (error: RemoteException) {
-            ContactlessPaymentResult(
+            is PaymentSdkOperationResult.Failure -> ContactlessPaymentResult(
                 stage = ContactlessPaymentStage.ERROR,
                 title = "Cancel failed",
-                message = "Could not cancel the SUNMI card-detection session: ${error.message.orEmpty()}"
+                message = "Could not cancel the SUNMI card-detection session: ${result.message}"
             )
         }
     }
 
     override fun dispose() {
-        kernel.removeConnectCallback(connectCallback)
-        try {
-            kernel.mReadCardOptV2?.cancelCheckCard()
-        } catch (_: RemoteException) {
-        }
-        kernel.destroyPaySDK()
-        isConnected = false
+        paymentSdkDataSource.disconnect()
         listener = null
     }
 
     private fun beginCheckCard() {
         val request = pendingRequest ?: return
-        try {
-            kernel.mReadCardOptV2?.cancelCheckCard()
-            kernel.mReadCardOptV2?.checkCard(
-                AidlConstants.CardType.NFC.value,
-                checkCardCallback,
-                checkCardTimeoutSeconds,
-            )
-            listener?.onEvent(
-                ContactlessPaymentResult(
-                    stage = ContactlessPaymentStage.WAITING_FOR_CARD,
-                    title = "Waiting for card",
-                    message = waitingMessage(request)
+        when (val result = paymentSdkDataSource.startContactlessCardCheck(checkCardTimeoutSeconds)) {
+            PaymentSdkOperationResult.Success -> {
+                listener?.onEvent(waitingForCardResult(request))
+            }
+            is PaymentSdkOperationResult.Failure -> {
+                listener?.onEvent(
+                    ContactlessPaymentResult(
+                        stage = ContactlessPaymentStage.ERROR,
+                        title = "Check card failed",
+                        message = "SUNMI could not start the NFC card-detection session: ${result.message}"
+                    )
                 )
-            )
-        } catch (error: RemoteException) {
-            listener?.onEvent(
-                ContactlessPaymentResult(
-                    stage = ContactlessPaymentStage.ERROR,
-                    title = "Check card failed",
-                    message = "SUNMI could not start the NFC card-detection session: ${error.message.orEmpty()}"
-                )
-            )
+            }
         }
     }
 
-    private fun notifyDetected(
-        uuid: String,
-        ats: String?,
-        cardCategory: Int?,
-        cardType: Int?,
-        pan: String?,
-    ) {
+    private fun readyResult(): ContactlessPaymentResult {
+        return ContactlessPaymentResult(
+            stage = ContactlessPaymentStage.READY,
+            title = "SUNMI payment SDK connected",
+            message = "Pay service connected. Starting contactless card detection."
+        )
+    }
+
+    private fun waitingForCardResult(request: ContactlessPaymentRequest): ContactlessPaymentResult {
+        return ContactlessPaymentResult(
+            stage = ContactlessPaymentStage.WAITING_FOR_CARD,
+            title = "Waiting for card",
+            message = waitingMessage(request)
+        )
+    }
+
+    private fun notifyDetected(cardDetails: ContactlessCardDetails) {
         listener?.onEvent(
             ContactlessPaymentResult(
                 stage = ContactlessPaymentStage.CARD_DETECTED,
                 title = "Contactless card detected",
-                message = if (ats.isNullOrBlank()) {
+                message = if (cardDetails.ats.isNullOrBlank()) {
                     "SUNMI payment SDK detected a nearby contactless card."
                 } else {
                     "SUNMI payment SDK detected a nearby contactless card and returned ATS data."
                 },
                 reference = listOfNotNull(
-                    uuid.takeIf { it.isNotBlank() }?.let { "UUID: $it" },
-                    ats?.takeIf { it.isNotBlank() }?.let { "ATS: $it" },
-                    cardCategory?.let { "cardCategory: $it" },
-                    cardType?.let { "cardType: $it" },
-                    pan?.takeIf { it.isNotBlank() }?.let { "pan: $it" },
+                    cardDetails.uuid.takeIf { it.isNotBlank() }?.let { "UUID: $it" },
+                    cardDetails.ats?.takeIf { it.isNotBlank() }?.let { "ATS: $it" },
+                    cardDetails.cardCategory?.let { "cardCategory: $it" },
+                    cardDetails.cardType?.let { "cardType: $it" },
+                    cardDetails.pan?.takeIf { it.isNotBlank() }?.let { "pan: $it" },
                 ).joinToString(" | ")
             )
         )
     }
 
-    private fun notifyError(code: Int, message: String?) {
+    private fun notifyError(code: Int?, message: String?) {
         listener?.onEvent(
             ContactlessPaymentResult(
                 stage = ContactlessPaymentStage.ERROR,
                 title = "Contactless test error",
                 message = buildString {
                     append("SUNMI check-card callback returned")
-                    if (code != Int.MIN_VALUE) {
+                    if (code != null) {
                         append(" code ")
                         append(code)
                     }
@@ -250,21 +212,6 @@ class SunmiContactlessPaymentRepository(
                 }
             )
         )
-    }
-
-    private fun isPayServiceInstalled(): Boolean {
-        val intent = Intent(SunmiServiceConfig.paymentServiceIntentAction)
-            .setPackage(SunmiServiceConfig.paymentServicePackage)
-        val resolved = appContext.packageManager.queryIntentServices(intent, 0)
-        if (!resolved.isNullOrEmpty()) {
-            return true
-        }
-        return try {
-            appContext.packageManager.getPackageInfo(SunmiServiceConfig.paymentServicePackage, 0)
-            true
-        } catch (_: PackageManager.NameNotFoundException) {
-            false
-        }
     }
 
     private fun waitingMessage(request: ContactlessPaymentRequest): String {

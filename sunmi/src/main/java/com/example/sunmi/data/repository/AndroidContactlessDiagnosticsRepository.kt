@@ -1,35 +1,34 @@
 package com.example.sunmi.data.repository
 
 import android.content.Context
-import android.nfc.NfcAdapter
-import android.os.Build
+import com.example.sunmi.data.model.SunmiServiceConfig
+import com.example.sunmi.data.source.AndroidContactlessHardwareStatusDataSource
+import com.example.sunmi.data.source.ContactlessHardwareStatus
+import com.example.sunmi.data.source.ContactlessHardwareStatusDataSource
 import com.example.sunmi.domain.model.ContactlessCapabilities
 import com.example.sunmi.domain.repository.ContactlessDiagnosticsRepository
 
-class AndroidContactlessDiagnosticsRepository(
-    context: Context,
+class AndroidContactlessDiagnosticsRepository internal constructor(
+    private val hardwareStatusDataSource: ContactlessHardwareStatusDataSource,
 ) : ContactlessDiagnosticsRepository {
-    private val appContext = context.applicationContext
+    constructor(context: Context) : this(AndroidContactlessHardwareStatusDataSource(context))
 
     override fun getCapabilities(): ContactlessCapabilities {
-        val packageManager = appContext.packageManager
-        val adapter = NfcAdapter.getDefaultAdapter(appContext)
-        val hasNfcFeature = packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_NFC)
-        val isNfcEnabled = adapter?.isEnabled == true
-        val readerModeSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT
+        val status = hardwareStatusDataSource.getStatus()
+        return ContactlessCapabilities(
+            hasNfcFeature = status.hasNfcFeature,
+            isNfcEnabled = status.isNfcEnabled,
+            readerModeSupported = status.readerModeSupported,
+            paymentDeviceHint = "${SunmiServiceConfig.terminalModel} / P-series payment device",
+            statusSummary = status.toStatusSummary(),
+        )
+    }
 
-        val summary = when {
+    private fun ContactlessHardwareStatus.toStatusSummary(): String {
+        return when {
             !hasNfcFeature -> "Android does not report a generic NFC feature. On SUNMI payment terminals, contactless may still be available through the vendor payment service."
             !isNfcEnabled -> "NFC hardware found, but Android reports it is disabled."
             else -> "NFC hardware is available and enabled for a contactless probe."
         }
-
-        return ContactlessCapabilities(
-            hasNfcFeature = hasNfcFeature,
-            isNfcEnabled = isNfcEnabled,
-            readerModeSupported = readerModeSupported,
-            paymentDeviceHint = "SUNMI P2-A11 / P-series payment device",
-            statusSummary = summary,
-        )
     }
 }
