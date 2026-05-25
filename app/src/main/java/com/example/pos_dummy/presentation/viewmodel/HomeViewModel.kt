@@ -3,21 +3,23 @@ package com.example.pos_dummy.presentation.viewmodel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.example.pos_dummy.data.repository.FakeSunmiPrinterRepository
-import com.example.pos_dummy.domain.model.ContactlessPaymentListener
-import com.example.pos_dummy.domain.model.ContactlessPaymentResult
-import com.example.pos_dummy.domain.model.ContactlessPaymentStage
-import com.example.pos_dummy.domain.model.ContactlessProbeResult
-import com.example.pos_dummy.domain.model.ContactlessProbeStage
-import com.example.pos_dummy.domain.repository.ContactlessDiagnosticsRepository
-import com.example.pos_dummy.domain.repository.ContactlessPaymentRepository
-import com.example.pos_dummy.domain.repository.PosPrinterRepository
-import com.example.pos_dummy.domain.usecase.contactless.CancelContactlessPaymentUseCase
-import com.example.pos_dummy.domain.usecase.contactless.ClearContactlessStateUseCase
-import com.example.pos_dummy.domain.usecase.contactless.GetContactlessCapabilitiesUseCase
-import com.example.pos_dummy.domain.usecase.contactless.GetContactlessPaymentAvailabilityUseCase
-import com.example.pos_dummy.domain.usecase.contactless.StartContactlessProbeUseCase
-import com.example.pos_dummy.domain.usecase.contactless.StartContactlessPaymentUseCase
+import com.example.sunmi.data.repository.FakeSunmiPrinterRepository
+import com.example.sunmi.domain.model.ContactlessPaymentListener
+import com.example.sunmi.domain.model.ContactlessPaymentResult
+import com.example.sunmi.domain.model.ContactlessPaymentStage
+import com.example.sunmi.domain.model.ContactlessPaymentUiState
+import com.example.sunmi.domain.model.ContactlessProbeResult
+import com.example.sunmi.domain.model.ContactlessProbeStage
+import com.example.sunmi.domain.model.ContactlessUiState
+import com.example.sunmi.domain.repository.ContactlessDiagnosticsRepository
+import com.example.sunmi.domain.repository.ContactlessPaymentRepository
+import com.example.sunmi.domain.repository.PosPrinterRepository
+import com.example.sunmi.domain.usecase.contactless.CancelContactlessPaymentUseCase
+import com.example.sunmi.domain.usecase.contactless.ClearContactlessStateUseCase
+import com.example.sunmi.domain.usecase.contactless.GetContactlessCapabilitiesUseCase
+import com.example.sunmi.domain.usecase.contactless.GetContactlessPaymentAvailabilityUseCase
+import com.example.sunmi.domain.usecase.contactless.StartContactlessProbeUseCase
+import com.example.sunmi.domain.usecase.contactless.StartContactlessPaymentUseCase
 
 class HomeViewModel(
     private val printerRepository: PosPrinterRepository = FakeSunmiPrinterRepository(),
@@ -35,28 +37,10 @@ class HomeViewModel(
     private val clearContactlessStateUseCase: ClearContactlessStateUseCase = ClearContactlessStateUseCase(),
 ) {
     init {
-        contactlessPaymentRepository.setListener(
-            ContactlessPaymentListener { result ->
-                onPaymentEvent(result)
-            }
-        )
+        contactlessPaymentRepository.setListener(ContactlessPaymentListener(::onPaymentEvent))
     }
 
-    var uiState by mutableStateOf(
-        HomeUiState(
-            printerInfo = printerRepository.getPrinterInfo(),
-            contactlessUiState = clearContactlessStateUseCase(
-                HomeUiState(printerInfo = printerRepository.getPrinterInfo()).contactlessUiState.copy(
-                    capabilities = getContactlessCapabilitiesUseCase()
-                )
-            ),
-            paymentUiState = HomeUiState(
-                printerInfo = printerRepository.getPrinterInfo()
-            ).paymentUiState.copy(
-                availability = getContactlessPaymentAvailabilityUseCase()
-            ),
-        )
-    )
+    var uiState by mutableStateOf(buildInitialUiState())
 
     fun refreshContactlessCapabilities() {
         val capabilities = getContactlessCapabilitiesUseCase()
@@ -143,8 +127,20 @@ class HomeViewModel(
         contactlessPaymentRepository.dispose()
     }
 
-    private fun HomeUiState.refreshPrinterInfo(): HomeUiState {
-        return copy(printerInfo = printerRepository.getPrinterInfo())
+    private fun buildInitialUiState(): HomeUiState {
+        val printerInfo = printerRepository.getPrinterInfo()
+        val capabilities = getContactlessCapabilitiesUseCase()
+        val paymentAvailability = getContactlessPaymentAvailabilityUseCase()
+
+        return HomeUiState(
+            printerInfo = printerInfo,
+            contactlessUiState = clearContactlessStateUseCase(
+                ContactlessUiState().copy(capabilities = capabilities)
+            ),
+            paymentUiState = ContactlessPaymentUiState().copy(
+                availability = paymentAvailability
+            ),
+        )
     }
 
     private fun onPaymentEvent(result: ContactlessPaymentResult) {

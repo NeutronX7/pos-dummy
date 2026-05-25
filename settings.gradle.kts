@@ -24,4 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "pos-dummy"
 include(":app")
- 
+include(":sunmi")

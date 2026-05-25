@@ -2,18 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="com.sunmi.perm.CONTACTLESS_CARD"/>
-    <uses-permission android:name="android.permission.NFC" />
-
-    <uses-feature
-        android:name="android.hardware.nfc"
-        android:required="false" />
-
-    <queries>
-        <package android:name="woyou.aidlservice.jiuiv5" />
-        <package android:name="com.sunmi.pay.hardware_v3" />
-    </queries>
-
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -35,7 +23,6 @@
             </intent-filter>
         </activity>
 
-        <activity android:name="com.sunmi.emv.l2.view.AppSelectActivity"/>
     </application>
 
 </manifest>

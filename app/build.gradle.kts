@@ -25,11 +25,6 @@ android {
         compose = true
     }
 
-    sourceSets {
-        getByName("main") {
-            jniLibs.srcDirs("libs")
-        }
-    }
 }
 
 dependencies {
@@ -42,12 +37,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
 
-    implementation(libs.printerx)
-
-    // Sunmi EMV / Pay SDK local libs
-    implementation(files("libs/PayLib-release-2.0.41.aar"))
-    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
-    implementation(files("libs/sunmiemvl2split-1.0.3.jar"))
+    implementation(project(":sunmi"))
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

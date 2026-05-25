@@ -31,10 +31,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.example.pos_dummy.data.repository.AndroidContactlessDiagnosticsRepository
-import com.example.pos_dummy.data.repository.SunmiContactlessPaymentRepository
-import com.example.pos_dummy.domain.model.ContactlessPaymentStage
-import com.example.pos_dummy.domain.model.ContactlessProbeStage
+import com.example.sunmi.data.repository.AndroidContactlessDiagnosticsRepository
+import com.example.sunmi.data.repository.SunmiContactlessPaymentRepository
+import com.example.sunmi.domain.model.ContactlessPaymentStage
+import com.example.sunmi.domain.model.ContactlessProbeStage
 import com.example.pos_dummy.presentation.viewmodel.HomeViewModel
 import com.example.pos_dummy.ui.theme.PosdummyTheme
 

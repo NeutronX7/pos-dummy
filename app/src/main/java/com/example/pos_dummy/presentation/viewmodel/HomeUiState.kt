@@ -1,8 +1,8 @@
 package com.example.pos_dummy.presentation.viewmodel
 
-import com.example.pos_dummy.domain.model.ContactlessUiState
-import com.example.pos_dummy.domain.model.ContactlessPaymentUiState
-import com.example.pos_dummy.domain.model.PrinterInfo
+import com.example.sunmi.domain.model.ContactlessUiState
+import com.example.sunmi.domain.model.ContactlessPaymentUiState
+import com.example.sunmi.domain.model.PrinterInfo
 
 data class HomeUiState(
     val printerInfo: PrinterInfo,

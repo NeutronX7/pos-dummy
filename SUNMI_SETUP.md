@@ -2,20 +2,24 @@
 
 This project starts with a dummy Sunmi integration so receipt flows can be built before hardware arrives.
 
+The SUNMI integration now lives in the dedicated `sunmi` library module. The `app` module only hosts the demo UI.
+
 ## What is already wired
 
-- `app/src/main/java/com/example/pos_dummy/domain/repository/PosPrinterRepository.kt`
+- `sunmi/src/main/java/com/example/sunmi/domain/repository/PosPrinterRepository.kt`
   Defines the printer contract used by the app.
-- `app/src/main/java/com/example/pos_dummy/domain/model/PrinterModels.kt`
+- `sunmi/src/main/java/com/example/sunmi/domain/model/PrinterModels.kt`
   Stores printer, receipt, print-result, and UI-state models.
-- `app/src/main/java/com/example/pos_dummy/data/repository/FakeSunmiPrinterRepository.kt`
+- `sunmi/src/main/java/com/example/sunmi/data/repository/FakeSunmiPrinterRepository.kt`
   Simulates connection, ready/error states, and receipt rendering.
-- `app/src/main/java/com/example/pos_dummy/presentation/viewmodel/SunmiDummyViewModel.kt`
-  Owns the dummy screen state and user actions.
-- `app/src/main/java/com/example/pos_dummy/presentation/screen/SunmiDummyScreen.kt`
-  Renders the screen and delegates behavior to the view-model layer.
-- `app/src/main/AndroidManifest.xml`
-  Declares package visibility for `woyou.aidlservice.jiuiv5`.
+- `sunmi/src/main/java/com/example/sunmi/data/repository/SunmiContactlessPaymentRepository.kt`
+  Wraps the SUNMI Pay SDK contactless card-detection flow.
+- `app/src/main/java/com/example/pos_dummy/presentation/viewmodel/HomeViewModel.kt`
+  Owns the demo screen state and delegates business logic to the `sunmi` module.
+- `app/src/main/java/com/example/pos_dummy/presentation/screen/HomeScreen.kt`
+  Renders the demo UI and wires Android NFC reader mode for the optional native probe.
+- `sunmi/src/main/AndroidManifest.xml`
+  Declares the SUNMI-specific permissions, package visibility, and EMV activity needed by the SDK.
 
 ## Sunmi doc points this project is based on
 
@@ -29,7 +33,7 @@ This project starts with a dummy Sunmi integration so receipt flows can be built
 
 ## When the real device arrives
 
-1. Add the real Sunmi dependency in `app/build.gradle.kts`.
+1. Add or update the real Sunmi dependency in `sunmi/build.gradle.kts`.
 2. Replace `FakeSunmiPrinterRepository` with a `SunmiPrinterLibraryRepository` that binds through Sunmi's printer library.
 3. Keep `PosPrinterRepository` unchanged so the UI and business flow remain stable.
 4. Test at least these cases on hardware:
